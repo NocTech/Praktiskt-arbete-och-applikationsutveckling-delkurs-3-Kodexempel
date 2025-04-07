@@ -1,4 +1,4 @@
-# Kursmaterial för AI Engineering - Delkurs 2
+# Kursmaterial för Praktiskt arbete och applikationsutveckling - Delkurs 3
 
 Välkommen till kursens kodrepo! Här hittar du allt material för de olika veckorna, med kodmaterial vi har gått igenom.
 
