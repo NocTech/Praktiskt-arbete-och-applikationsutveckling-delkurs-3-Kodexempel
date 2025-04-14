@@ -41,48 +41,6 @@ async function listAssistants() {
 
 // ------------------------------------------------------------
 
-// Upload a file and attach to vector store
-
-// ------------------------------------------------------------
-
-async function uploadFile() {
-	const file = await openai.files.create({
-		file: fs.createReadStream("return-policies.pdf"),
-		purpose: "assistants",
-	});
-	console.log(file);
-	console.log(file.id);
-	//file-FeLYcUvaZACNHNk4fTytci
-}
-
-async function listFiles() {
-	const files = await openai.files.list();
-	console.log(files.data);
-}
-
-//uploadFile();
-//listFiles();
-
-async function createVectorStoreAndAttachFile(fileId) {
-	const vectorStore = await openai.vectorStores.create({
-		name: "BrightGood Company Documents",
-	});
-	console.log(vectorStore);
-	console.log(vectorStore.id);
-	//vs_67fd2dff5b6081919be5a4400dd0190c
-
-	const vectorStoreFile = await openai.vectorStores.files.create(
-		vectorStore.id,
-		{
-			file_id: fileId,
-		}
-	);
-	console.log(vectorStoreFile);
-}
-//createVectorStoreAndAttachFile("file-FeLYcUvaZACNHNk4fTytci");
-
-// ------------------------------------------------------------
-
 // Update an assistant
 
 // ------------------------------------------------------------
