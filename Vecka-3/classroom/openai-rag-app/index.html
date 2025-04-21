@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenAI RAG App</title>
+    <link rel="stylesheet" href="src/style.css">
+  </head>
+  <body>
+    <div id="app">
+      <nav>
+        <button id="nav-upload">Upload Documents</button>
+        <button id="nav-query">Query Database</button>
+      </nav>
+
+      <div id="upload-page" class="page active">
+        <h1>Upload Documents</h1>
+        <input type="file" id="file-input" accept=".pdf,.txt,.md,.docx" />
+        <button id="upload-button">Upload and Create Vector Store</button>
+        <p id="upload-status"></p>
+        <p>Vector Store ID: <span id="vector-store-id">None</span></p>
+      </div>
+
+      <div id="query-page" class="page">
+        <h1>Query Database</h1>
+        <div>
+          <label for="system-prompt">System Prompt:</label><br/>
+          <textarea id="system-prompt" rows="4" cols="50">You are a friendly assistant that can use a tool called "file_search" to retrieve information from the uploaded documents. If no relevant information can be found in the documents for the user's query, state that you cannot find information about that in the database.</textarea>
+        </div>
+        <div>
+          <label for="user-query">Your Query:</label><br/>
+          <input type="text" id="user-query" size="50" />
+          <button id="query-button">Send Query</button>
+        </div>
+        <div id="conversation">
+          <h2>Conversation</h2>
+          <div id="messages"></div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="src/main.js"></script>
+  </body>
+</html>
