@@ -5,8 +5,6 @@ const chatMessages = document.getElementById("chatMessages");
 const chatForm = document.getElementById("chatForm");
 const userInput = document.getElementById("userInput");
 
-
-
 // Initialize OpenAI client
 const client = new OpenAI({
 	apiKey: import.meta.env.VITE_OPEN_AI_KEY,
@@ -25,26 +23,111 @@ function addMessage(content, isUser = false) {
 
 const history = []; // Hur kan denna användas för att hålla konversationen i minnet?
 
+const previous_response_id = null;
+
 async function streamResponse(prompt) {
-	
+    history.push({
+        role: "user",
+        content: prompt
+    });
 	try {
-        //Kan vi instruera modellen att inte använda markdown? Eller parsa markdownen på något sätt? Kan vi be den skriva kortare svar?
-		const response = await client.responses.create({
+		//Kan vi instruera modellen att inte använda markdown? Eller parsa markdownen på något sätt? Kan vi be den skriva kortare svar?
+		const stream = await client.responses.create({
 			model: "gpt-4o-mini",
-			input: prompt,
+			input: history,
+			previous_response_id: previous_response_id,
 			tools: tools,
-			stream: false,
+			stream: true,
 		});
 
-		const lastMessage = chatMessages.lastElementChild;
+		let output = "";
+        const lastMessage = chatMessages.lastElementChild;
+
+		for await (const event of stream) {
+            
+			if (event.type === "response.output_text.delta") {
+				const delta = event.delta;
+				output += delta;
+				if (lastMessage) {
+					lastMessage.textContent = output;
+				}
+			} else {
+				//console.log(event);
+			}
+            if (event.type === "response.completed") {
+                for (const item of event.response.output) {
+                    console.log("Final item is: ", item);
+                    console.log("Final item is: ", event.response.id);
+                    previous_response_id = event.response.id;
+                    console.log("Final item is: ", event.response.output_text);
+                    if (item.type === "message") {
+                        history.push({
+                            role: "assistant",
+                            content: item.content[0].text
+                        });
+                       /*  previous_response_id = item.response.id;
+                        history.push({
+                            role: "assistant",
+                            content: item.text
+                        }); */
+                    } else if (item.type === "function_call") {
+                        if (item.name === "retrieveDataBetweenDates") {
+                            
+                            const data = await retrieveDataBetweenDates(item.arguments.start_date, item.arguments.end_date);
+                            output += data;
+                            if (lastMessage) {
+                                lastMessage.textContent = output;
+                            }
+                        }
+                    }
+                }
+                
+            }
+		}
+
+		/* const lastMessage = chatMessages.lastElementChild;
 		if (lastMessage) {
 			lastMessage.textContent = response.output_text;
-		}
+		} */
 	} catch (error) {
 		console.error("Error:", error);
 		addMessage("Sorry, there was an error processing your request.", false);
 	}
 }
+
+/*
+
+Documentation on streaming:
+https://platform.openai.com/docs/guides/streaming-responses?api-mode=responses&lang=javascript
+
+type StreamingEvent = 
+	| ResponseCreatedEvent
+	| ResponseInProgressEvent
+	| ResponseFailedEvent
+	| ResponseCompletedEvent
+	| ResponseOutputItemAdded
+	| ResponseOutputItemDone
+	| ResponseContentPartAdded
+	| ResponseContentPartDone
+	| ResponseOutputTextDelta
+	| ResponseOutputTextAnnotationAdded
+	| ResponseTextDone
+	| ResponseRefusalDelta
+	| ResponseRefusalDone
+	| ResponseFunctionCallArgumentsDelta
+	| ResponseFunctionCallArgumentsDone
+	| ResponseFileSearchCallInProgress
+	| ResponseFileSearchCallSearching
+	| ResponseFileSearchCallCompleted
+	| ResponseCodeInterpreterInProgress
+	| ResponseCodeInterpreterCallCodeDelta
+	| ResponseCodeInterpreterCallCodeDone
+	| ResponseCodeInterpreterCallIntepreting
+	| ResponseCodeInterpreterCallCompleted
+	| Error
+
+*/
+
 
 chatForm.addEventListener("submit", async (e) => {
 	e.preventDefault();

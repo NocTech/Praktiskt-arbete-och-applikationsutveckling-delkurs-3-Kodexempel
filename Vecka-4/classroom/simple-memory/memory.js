@@ -6,6 +6,7 @@ const client = new OpenAI({
 	apiKey: process.env.OPENAI_API_KEY,
 });
 
+//En sökväg till en fil som kan användas för att lagra minnet.
 const MEMORY_FILE = "./memory_bank.json";
 
 const exampleFunctionSchema = {
@@ -28,7 +29,30 @@ const exampleFunctionSchema = {
 // Uppgift här är att skriva en schema för en funktion som kan användas för att lägga till en text i minnet.
 //Få hjälp att skriva ett schema med hjälp av exampleFunctionSchema ovan eller OpenAIs schema generator.
 //Se: https://platform.openai.com/docs/guides/function-calling?api-mode=responses#:~:text=Take%20a%20look%20at%20this%20example%20or%20generate,Generate
-const addToMemorySchema = {};
+const addToMemorySchema = {
+    type: "function",
+    name: "addToMemory",
+    description: `When the user tells you something factual about themselves,
+    their life or their preferences, call this function.
+    
+    Keep the memory text short and concise. Always refer to the user as "this user"`,
+    parameters: {
+        type: "object",
+        properties: {
+            memoryText: {
+                type: "string",
+                description: "The text to add to the memory"
+            },
+            expires: {
+                type: "boolean",
+                description: "Whether the memory should expire or not."
+            }
+        },
+        required: ["memoryText", "expires"],
+        additionalProperties: false,
+    },
+    strict: true,
+};
 
 
 async function chatWithMemory(prompt) {
@@ -39,7 +63,9 @@ async function chatWithMemory(prompt) {
 		//Kan vi instruera modellen att inte använda markdown? Eller parsa markdownen på något sätt? Kan vi be den skriva kortare svar?
 		const response = await client.responses.create({
 			model: "gpt-4o-mini",
-			input: "Previous memories: " + memory + "\n" + "Users prompt: " + prompt,
+            instructions: "The information you have about this user is: " + memory,
+			input: prompt,
+			tools: [addToMemorySchema],
 			stream: false,
 		});
 
@@ -91,8 +117,8 @@ export function getMemory() {
 /* ---------- main ---------- */
 async function main() {
 	await loadMemory();
-	//await chatWithMemory("My name is Joel! :)");
-	await chatWithMemory("What is my name?");
+	//await chatWithMemory("I am a software developer and I live in Stockholm. I like being in nature and I like to travel.");
+	await chatWithMemory("Who am I?");
 }
 
 main();
