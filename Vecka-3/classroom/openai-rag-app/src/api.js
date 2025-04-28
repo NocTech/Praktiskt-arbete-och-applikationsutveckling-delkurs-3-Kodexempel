@@ -92,7 +92,7 @@ async function createVectorStore(name) {
 async function attachFileToVectorStore(fileId, vectorStoreId) {
 	//Här vill jag att ni anropar openai.vectorStores.files.create()
 	//Se https://platform.openai.com/docs/api-reference/vector-stores-files?lang=node.js
-	
+	const vectorStoreFile = null;
 }
 
 // ---------------------------- Steg 4 - Implementera responses api och anrop till en "assistent" ----------------------------
