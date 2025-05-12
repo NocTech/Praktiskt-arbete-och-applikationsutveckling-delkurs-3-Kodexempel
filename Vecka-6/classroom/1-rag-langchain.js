@@ -1,5 +1,3 @@
-
-
 // 1. Läs in PDF -> PDFLoader
 // npm install pdf-parse @langchain/community @langchain/openai @langchain/core @supabase/supabase-js
 // 2. Dela upp PDFen i delar (chunks)
@@ -11,9 +9,79 @@
 // 4. Söka efter relevanta chunks med embeddings
 // För att söka i databasen så används fortfarande en funktion i SQL hos supabase
 
+import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
+import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
+import { OpenAIEmbeddings } from "@langchain/openai";
+import { SupabaseVectorStore } from "@langchain/community/vectorstores/supabase";
+import { createClient } from "@supabase/supabase-js";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const sbApiKey = process.env.SUPABASE_ANON_KEY;
+const sbUrl = process.env.SUPABASE_URL;
+const apiKey = process.env.OPENAI_API_KEY;
+
+const supabase = createClient(sbUrl, sbApiKey);
+
+const embeddings = new OpenAIEmbeddings({
+	model: "text-embedding-3-small",
+	apiKey: apiKey,
+});
+
+async function uploadPDFToSupabase(pdfPath) {
+	try {
+		const loader = new PDFLoader(pdfPath);
+		const docs = await loader.load();
+		//console.log(docs[0].pageContent);
+
+		const textSplitter = new RecursiveCharacterTextSplitter({
+			chunkSize: 1000,
+			chunkOverlap: 500,
+		});
+
+		const chunks = await textSplitter.splitDocuments(docs);
+		console.log(chunks);
+
+		/* const vectorStore = await SupabaseVectorStore.fromDocuments(
+			chunks,
+			embeddings,
+			{
+				client:supabase,
+				tableName: "documents",
+			}
+		); */
+
+        const vectorStore = await SupabaseVectorStore(embeddings, {
+            client:supabase,
+            tableName: "documents",
+        });
+
+        await vectorStore.addDocuments(chunks);
+        
+
+		/* const textSplit = await textSplitter.createDocuments(["Hej hej hej"]);
+    console.log(textSplit); */
+	} catch (error) {
+		console.error("Error uploading PDF to Supabase:", error);
+	}
+}
+
+//uploadPDFToSupabase("./tonejs.pdf");
 
 
+async function searchSupabase(query1, query2) {
+    const vectorStore = await SupabaseVectorStore.fromExistingIndex(embeddings, {
+        client:supabase,
+        tableName: "documents",
+        queryName: "match_documents",
+    });
 
+    const retriever = vectorStore.asRetriever();
 
+    const result = await retriever.invoke(query1);
 
+    console.log(result);
+}
 
+searchSupabase("What is the high level architecture of Tone.js?", "Who wrote this article?");
