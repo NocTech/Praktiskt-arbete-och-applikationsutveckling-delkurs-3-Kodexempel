@@ -70,7 +70,7 @@ async function uploadPDFToSupabase(pdfPath) {
 //uploadPDFToSupabase("./tonejs.pdf");
 
 
-async function searchSupabase(query1, query2) {
+async function searchSupabase(query1) {
     const vectorStore = await SupabaseVectorStore.fromExistingIndex(embeddings, {
         client:supabase,
         tableName: "documents",
@@ -79,9 +79,15 @@ async function searchSupabase(query1, query2) {
 
     const retriever = vectorStore.asRetriever();
 
+    const promptTemplate = "Please formulate the following query into a standalone question: {query}";
+    //const result = llm.invoke(query1);
+    //Acknowledgements in the article
+
     const result = await retriever.invoke(query1);
+
+    //promptTemplate.pipe(llm).pipe(retriever).pipe(llm);
 
     console.log(result);
 }
 
-searchSupabase("What is the high level architecture of Tone.js?", "Who wrote this article?");
+searchSupabase("I'm sitting here holding a lecture about Tone.js, and I would like to know who the author would like to thank for writing tone.js?");
