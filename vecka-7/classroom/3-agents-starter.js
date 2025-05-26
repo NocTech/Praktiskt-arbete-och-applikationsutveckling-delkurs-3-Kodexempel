@@ -3,7 +3,7 @@ import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { ChatOpenAI } from "@langchain/openai";
 import dotenv from "dotenv";
-
+import { TavilySearch } from "@langchain/tavily";
 
 dotenv.config();
 
@@ -24,11 +24,12 @@ const teamFactToolDescription = `Skriv en bra beskrivning av detta verktyg.`; //
 
 //2. Skapa en databas med fakta om Project Tone. (Eller annat valfritt projekt eller idé du har (kanske något till ditt eget projekt?))
 const teamInfoDatabase = {
-	team_lead: "Vem är projektledaren för Project Tone?",
+	team_lead: "Joel Janson är projektledare för Project Tone. Han är utbildad i systemutveckling och har tidigare arbetat med att utveckla en app för att hjälpa personer med att hitta lämpliga jobb.",
 	project_deadline: "Vad är projektets deadline?",
 	communication_channel: "Vilken kommunikationskanal används för Project Tone?",
-	meeting_schedule: "Vad är mötesschemat?",
+	meeting_schedule: "Projektgruppen möts varje måndag klockan 10. Och varje fredag klockan 12.",
 	favorite_snack: "Vilket är teamets favoritsnack?",
+    programming_language: "Det är en app som utvecklas i Python och JavaScript.",
 	// Lägg gärna till fler fakta!
 };
 
@@ -44,12 +45,7 @@ async function runTeamNavigatorAgent() {
 	const teamFactTool = tool(
 		async ({ topic }) => {
 			console.log(`[TeamFactTool CALLED] Topic: ${topic}`);
-			// Standardisera topic-strängen lite för enklare matchning
-			const standardizedTopic = topic
-				.toLowerCase()
-				.replace(/\s+/g, "_")
-				.replace(/[?.,!]/g, "");
-			const fact = teamInfoDatabase[standardizedTopic];
+			const fact = teamInfoDatabase[topic];
 
 			if (fact) {
 				return fact;
@@ -65,26 +61,26 @@ async function runTeamNavigatorAgent() {
 				topic: z
 					.string()
 					.describe(
-						"Det specifika ämnet du vill ha information om (t.ex. 'team_lead', 'project_deadline', 'communication_channel', 'meeting_schedule', 'favorite_snack', 'teamets favoritsnacks'). Matcha nyckelorden i beskrivningen exakt."
+						"Det specifika ämnet du vill ha information om (t.ex. 'programming_language', 'team_lead', 'project_deadline', 'communication_channel', 'meeting_schedule', 'favorite_snack'). Matcha nyckelorden i beskrivningen exakt."
 					),
 			}),
 		}
 	);
 
-	const tools = [teamFactTool]; 
+	//const tools = [teamFactTool]; 
     // Du kan lägga till TavilySearch här om du vill använda det.
-	// import { TavilySearch } from "@langchain/tavily";
-	// const searchTool = new TavilySearch({ maxResults: 1 });
-	// const tools = [teamFactTool, searchTool];
+	
+	const searchTool = new TavilySearch({ maxResults: 5 });
+	const tools = [teamFactTool, searchTool];
 
 	const agentPrompt = `Dagens datum är ${new Date().toLocaleDateString(
 		"sv-SE"
 	)}.
 Du är "Tone Assistant", en hjälpsam och lite finurlig AI för teamet 'Project Tone'.
-Du har tillgång till ett specialverktyg som heter "TeamFactTool". Detta verktyg innehåller specifik, aktuell information om Project Tone (som teamledare, deadlines, kommunikationskanaler, mötestider och till och med teamets favoritsnacks!).
+Du har tillgång till ett specialverktyg som heter "TeamFactTool". Detta verktyg innehåller specifik, aktuell information om Project Tone (som programmeringsspråk, teamledare, deadlines, kommunikationskanaler, mötestider och till och med teamets favoritsnacks!).
 
 Du ska ENDAST använda TeamFactTool om användaren ställer en fråga som tydligt handlar om en av dessa interna Project Tone-detaljer som beskrivs i verktygets beskrivning.
-För allmänna kunskapsfrågor (t.ex. 'Vad är LangChain?', 'Vad är huvudstaden i Frankrike?'), svara direkt med din egen kunskap och ANVÄND INTE TeamFactTool.
+För allmänna kunskapsfrågor (t.ex. 'Vad är LangChain?', 'Vad är huvudstaden i Frankrike?'), ANVÄND INTE TeamFactTool utan search tool!
 Om du blir tillfrågad om ett teamfakta och TeamFactTool indikerar att det inte har informationen (eller om frågan inte matchar verktygets syfte), meddela artigt att du inte har den specifika detaljen.
 Var vänlig och koncis i dina svar. Ge bara det slutgiltiga svaret till användaren.`;
 
@@ -96,12 +92,12 @@ Var vänlig och koncis i dina svar. Ge bara det slutgiltiga svaret till använda
 
 	// --- 3. Testa agenten ---
 	const questions = [
-		"Vem är teamledare för Project Tone?",
-		"När är projektets deadline?",
-		"Berätta om teamets favoritsnacks.",
+		//"Vem är teamledare för Project Tone?",
+		//"När är projektets deadline?",
+		//"Berätta om teamets favoritsnacks.",
 		"Vad är vädret i Kiruna idag?", // General question
-		"Vilket programmeringsspråk är Project Tone byggt i?", // Tool doesn't know
-		"Hur fungerar mötesschemat?", // Should use tool
+		//"Vilket programmeringsspråk är Project Tone byggt i?", // Tool doesn't know
+		//"Hur fungerar mötesschemat?", // Should use tool
 	];
 
 	for (const question of questions) {

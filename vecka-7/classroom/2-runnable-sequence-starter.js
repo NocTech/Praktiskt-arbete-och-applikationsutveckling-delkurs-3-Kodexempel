@@ -30,7 +30,7 @@ async function runProductPulseChecker() {
 	// --- 1. reviewGeneratorChain ---
     // Detta är min kedja som ni kan inspireras av.
 	const reviewGenPromptText = `Du är en hjälpsam AI-assistent.
-Generera 3-4 korta, varierade kundrecensionsutdrag för produkten: {product_name}.
+Generera 10 korta, varierade kundrecensionsutdrag för produkten: {product_name}.
 Inkludera en blandning av positiva, negativa och neutrala poänger. Få dem att låta som riktiga kunder.
 Varje utdrag ska vara på en ny rad. Ge bara utdragen, inget annat.`;
 
@@ -64,6 +64,7 @@ Varje utdrag ska vara på en ny rad. Ge bara utdragen, inget annat.`;
 			// `product_name` skickas vidare från den ursprungliga inputen till `overallChain`.
 			// (input) => input.product_name ser till att vi plockar ut product_name från det objekt som skickas till overallChain.invoke()
 			product_name: (input) => input.product_name,
+
 		},
         //Här kan ni använda en lambda funktion för att logga mellanresultatet vi får från kedjan ovan.
 		summarizerChain,
